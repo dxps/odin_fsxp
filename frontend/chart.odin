@@ -41,7 +41,7 @@ render_chart :: proc(layout: Layout) {
 			if returns_mode {
 				zero := chart_box.y + hi / (hi - lo) * chart_box.h
 				if item.has_return {
-					fill({x - 8, min(y, zero), 16, max(2.0, abs(zero - y))}, GREEN if v >= 0 else RED)
+					fill({x - 8, min(y, zero), 16, max(2.0, abs(zero - y))}, GREEN if v >= 0 else RED, corner_radius = 0)
 				}
 			} else {
 				if i > 0 {

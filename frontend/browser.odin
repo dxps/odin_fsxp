@@ -4,10 +4,15 @@ package main
 foreign import browser "browser"
 @(default_calling_convention = "c")
 foreign browser {
+	path_begin :: proc() ---
+	path_move :: proc(x, y: f64) ---
+	path_line :: proc(x, y: f64) ---
+	path_curve :: proc(cx1, cy1, cx2, cy2, x, y: f64) ---
+	path_stroke :: proc(width: f64, color: rawptr, length: i32) ---
 	viewport_width :: proc() -> f64 ---
 	viewport_height :: proc() -> f64 ---
 	begin :: proc(width, height: f64) ---
-	rect :: proc(x, y, w, h: f64, color: rawptr, length: i32) ---
+	rect :: proc(x, y, w, h, radius: f64, top_corners_only: i32, color: rawptr, length: i32) ---
 	text :: proc(x, y, size: f64, value: rawptr, length: i32, color: rawptr, color_length: i32) ---
 	line :: proc(x1, y1, x2, y2, width: f64, color: rawptr, length: i32) ---
 	circle :: proc(x, y, radius: f64, color: rawptr, length: i32) ---

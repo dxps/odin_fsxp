@@ -12,6 +12,13 @@ main :: proc() {
 
 last_width, last_height: f64
 
+// Exported so `odin.js` (supplied by Odin compiler) can find this procedure
+// on the WASM module's exports. After startup, the runtime uses the browser's
+// `requestAnimationFrame()` to call `step()` every animation frame, passing
+// elapsed seconds and the implicit Odin context obtained from default_context_ptr().
+// Returning true schedules the next frame; returning false stops the loop.
+// Although step() runs every frame, rendering happens only when
+// dirty is true (state or viewport changed).
 @(export)
 step :: proc(delta: f64) -> bool {
 	update_requests(delta)

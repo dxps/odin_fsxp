@@ -1,17 +1,18 @@
 # Odin Financial Research Platform
 
-A personal financial research and trading platform built in Odin, following
-[Hands-On Financial Trading with Python, Second Edition](https://github.com/PacktPublishing/Hands-on-Financial-Trading-with-Python-Second-Edition).
-The targets are a native backend and an Odin WebAssembly frontend.
+A personal financial research and trading platform built in Odin.
 
+The targets are a native backend and an Odin WebAssembly frontend.
 The first increment includes a native HTTP API, shared financial calculations,
 an Odin development runner, and a canvas UI rendered by Odin/WASM. See
 [Milestone 01](docs/milestone-01-feasibility.md) for findings and the proposed
 development workflow.
 
+<br/>
+
 ## Prerequisites
 
-### macOS
+### In macOS
 
 1. **Xcode Command Line Tools** — provide the native compiler, linker, macOS SDK,
    and Git. Install them and complete the installation dialog:
@@ -75,23 +76,22 @@ It also loads WASM through the official `odin.js`, copied from the installed
 Odin toolchain into `build/web/`. `index.html` hosts the canvas and scripts;
 there are no HTML application controls or authored stylesheets.
 
-## Build and run
+<br/>
+
+## Build and Run
 
 Run these commands from the repository root. All project tooling is Odin;
 there are no additional watcher packages to install.
 
-```sh
-# Build the native backend, WASM UI, and browser host assets into build/.
-odin run tools/dev -- build
+- Build the native backend, WASM UI, and browser host assets into build/ using `odin run tools/dev -- build`
 
-# Run financial calculation tests.
-odin run tools/dev -- test
+- Run financial calculation tests using `odin run tools/dev -- test`
 
-# Watch both targets and run the backend on 127.0.0.1:8080.
-odin run tools/dev -- dev
-```
+- Watch both targets and run the backend on 127.0.0.1:8080 using `odin run tools/dev -- dev` \
+  Or use `./run_dev.sh`
 
-Open [the research lab](http://127.0.0.1:8080/) after the first build completes.
+
+Open [the Web UI](http://127.0.0.1:8080/) after the first build completes.
 If a runner is already open from an earlier version, stop it with Ctrl-C and
 restart it once to load the updated development tooling.
 
@@ -131,16 +131,21 @@ To run the compiled backend directly, optionally selecting a different address:
 ./build/backend 127.0.0.1:8081
 ```
 
+<br/>
+
 ## Current API
 
 - `GET /api/health`: status and build identifier.
 - `GET /api/prices`: six deterministic **synthetic** closing prices and their
-  simple daily returns. The first observation has `has_return: false` because
+  simple daily returns.\
+  The first observation has `has_return: false` because
   no preceding price exists.
 - `GET /api/dev/events`: persistent SSE connection for backend availability and
-  frontend rebuild notifications. `/api/health` remains available for diagnostics.
+  frontend rebuild notifications.\
+  `/api/health` remains available for diagnostics.
 - `GET /api/dev/version`: diagnostic/compatibility endpoint, allowing previously
-  loaded polling clients to discover the SSE build. The new UI does not poll it.
+  loaded polling clients to discover the SSE build. \
+  The new UI does not poll it.
 
 Backend build identifiers use `yy.mm.dd.counter`, for example `26.11.01.1`.
 The date is UTC; the counter starts at 1 each day and increments after a
@@ -149,11 +154,10 @@ the development runner preserves it. Deleting `build/` resets this local
 history. Failed compilations do not advance the counter. Direct builds without
 the development runner use the identifier `manual`.
 
-Open [health](http://127.0.0.1:8080/api/health) or
-[prices](http://127.0.0.1:8080/api/prices) while the backend is running.
-The server also serves the explicitly listed browser assets with their proper
-MIME types, including `application/wasm`. It uses bounded concurrent HTTP/1.x
-workers: up to 32 connections, of which at most 16 may be SSE streams, leaving
+Open [health](http://127.0.0.1:8080/api/health) or [prices](http://127.0.0.1:8080/api/prices)
+while the backend is running. The server also serves the explicitly listed browser assets
+with their proper MIME types, including `application/wasm`. It uses bounded concurrent 
+HTTP/1.x workers: up to 32 connections, of which at most 16 may be SSE streams, leaving
 capacity for API and asset requests. It remains a local-development server.
 
 The SSE stream sends `backend-ready` on every connection, `frontend-changed`
@@ -164,6 +168,8 @@ forwards events to Odin; Odin decides whether to refetch data or reload.
 Closed streams release their slots, and slow/broken writes terminate a stream.
 Only local build-marker sampling remains on the server (every 300 ms per
 stream); there is no browser health/version polling.
+
+<br/>
 
 ## Web UI
 

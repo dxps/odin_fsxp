@@ -5,8 +5,10 @@ import "core:fmt"
 
 // Responsive layout and dashboard sections, in the order they appear on screen.
 Layout :: struct {
-	width, height, margin, content, chart_y, table_y: f64,
-	narrow: bool,
+	width, height:    f64,
+	margin, content:  f64,
+	chart_y, table_y: f64,
+	narrow:           bool,
 }
 
 calculate_layout :: proc(width, viewport_height: f64) -> Layout {
@@ -21,7 +23,7 @@ calculate_layout :: proc(width, viewport_height: f64) -> Layout {
 render :: proc(width, viewport_height: f64) {
 	layout := calculate_layout(width, viewport_height)
 	begin(layout.width, layout.height)
-	fill({0, 0, layout.width, layout.height}, BG)
+	fill({0, 0, layout.width, layout.height}, BG, corner_radius = 0)
 	render_header(layout)
 	render_metrics(layout)
 	render_chart(layout)
@@ -76,15 +78,18 @@ render_metrics :: proc(layout: Layout) {
 render_ledger :: proc(layout: Layout) {
 	margin, content, table_y := layout.margin, layout.content, layout.table_y
 	write(margin, table_y, 18, "Observation ledger")
-	write(margin, table_y + 25, 11, "Chart: hover or use left / right arrow keys.", MUTED)
-	fill({margin, table_y + 43, content, 32}, GRID)
+	write(margin, table_y + 25, 11, "Click a row, hover the chart, or use arrow keys.", MUTED)
+	fill({margin, table_y + 43, content, 32}, GRID, top_corners_only = true)
 	write(margin + 14, table_y + 64, 11, "DATE", MUTED)
 	write(margin + content * 0.48, table_y + 64, 11, "CLOSE", MUTED)
 	write(margin + content * 0.72, table_y + 64, 11, "RETURN", MUTED)
 	for item, i in prices[:count] {
 		row_y := table_y + 76 + f64(i) * 39
+		row_boxes[i] = {margin, row_y, content, 38}
 		if i == selected {
-			fill({margin, row_y, content, 38}, PANEL)
+			fill(row_boxes[i], PANEL)
+		} else if i == hovered_row {
+			fill(row_boxes[i], ROW_HOVER)
 		}
 		write(margin + 14, row_y + 24, 12, item.date)
 		write(margin + content * 0.48, row_y + 24, 12, fmt.tprintf("%.2f", item.close))

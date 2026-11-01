@@ -3,9 +3,12 @@ package main
 import finance "../shared/finance"
 
 // State and theme shared by the frontend files in this Odin package.
+
 // Palette.
 BG :: "#0c1420"
+DEFAULT_CORNER_RADIUS :: f64(6)
 PANEL :: "#142132"
+ROW_HOVER :: "#101b29"
 INK :: "#edf3f8"
 MUTED :: "#93a7bb"
 GRID :: "#27374a"
@@ -39,5 +42,6 @@ pending_age: [1]f64
 // Keyboard focus, hit-test bounds, and redraw flag.
 focus: int = -1
 refresh_box, price_box, return_box, chart_box: Box
+row_boxes: [len(prices)]Box
+hovered_row: int = -1
 dirty := true
-

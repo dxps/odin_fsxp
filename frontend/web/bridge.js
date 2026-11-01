@@ -18,6 +18,16 @@
         exports.event_received(kind, bytes.length);
     };
     const host = {
+        path_begin: () => ctx.beginPath(),
+        path_move: (x, y) => ctx.moveTo(x, y),
+        path_line: (x, y) => ctx.lineTo(x, y),
+        path_curve: (x1, y1, x2, y2, x, y) => ctx.bezierCurveTo(x1, y1, x2, y2, x, y),
+        path_stroke: (width, ptr, len) => {
+            ctx.save();
+            ctx.strokeStyle = string(ptr, len); ctx.lineWidth = width;
+            ctx.lineCap = "round"; ctx.lineJoin = "round";
+            ctx.stroke(); ctx.restore();
+        },
         viewport_width: () => document.documentElement.clientWidth,
         viewport_height: () => document.documentElement.clientHeight,
         begin: (width, height) => {
@@ -29,8 +39,12 @@
             }
             ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         },
-        rect: (x, y, w, h, ptr, len) => {
-            ctx.fillStyle = string(ptr, len); ctx.fillRect(x, y, w, h);
+        rect: (x, y, w, h, radius, topOnly, ptr, len) => {
+            ctx.fillStyle = string(ptr, len);
+            if (radius === 0) { ctx.fillRect(x, y, w, h); return; }
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, topOnly ? [radius, radius, 0, 0] : radius);
+            ctx.fill();
         },
         text: (x, y, size, ptr, len, colorPtr, colorLen) => {
             ctx.font = `${size}px ui-sans-serif, system-ui, sans-serif`;

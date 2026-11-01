@@ -3,14 +3,24 @@ package main
 import "base:runtime"
 import "core:math"
 
-// Pointer and keyboard actions; browser event translation stays in bridge.js.
+// Pointer and keyboard actions; browser event translation stays in `bridge.js`.
 @(export)
 pointer :: proc "c" (x, y: f64, down: i32) {
 	context = runtime.default_context()
-	set_pointer_cursor(1 if inside(refresh_box, x, y) else 0)
+	hovered_row = -1
+	for box, i in row_boxes[:count] {
+		if inside(box, x, y) {
+			hovered_row = i
+			break
+		}
+	}
+	set_pointer_cursor(1 if inside(refresh_box, x, y) || hovered_row >= 0 else 0)
 	if down != 0 {
 		// Pointer input does not retain the keyboard focus indicator.
 		focus = -1
+		if hovered_row >= 0 {
+			selected = hovered_row
+		}
 		if inside(refresh_box, x, y) {
 			refresh()
 		}

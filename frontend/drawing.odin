@@ -1,10 +1,10 @@
 package main
 
-import "core:math"
-
 // Canvas primitives and reusable controls. Coordinates are in CSS pixels.
-fill :: proc(box: Box, color: string) {
-	rect(box.x, box.y, box.w, box.h, raw_data(color), i32(len(color)))
+// Radius is configurable per rectangle; 0 draws square corners.
+fill :: proc(box: Box, color: string, corner_radius: f64 = DEFAULT_CORNER_RADIUS, top_corners_only := false) {
+	radius := clamp(corner_radius, 0, max(0.0, min(box.w, box.h) / 2))
+	rect(box.x, box.y, box.w, box.h, radius, 1 if top_corners_only else 0, raw_data(color), i32(len(color)))
 }
 
 write :: proc(x, y, size: f64, value: string, color := INK) {
@@ -25,7 +25,7 @@ inside :: proc(box: Box, x, y: f64) -> bool {
 
 button :: proc(b: Box, title: string, active: bool, index: int) {
 	if focus == index {
-		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, GREEN)
+		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, GREEN, DEFAULT_CORNER_RADIUS + 2)
 	}
 	fill(b, GRID if active else PANEL)
 	write(b.x + 14, b.y + 25, 13, title, GREEN if active else INK)
@@ -33,34 +33,21 @@ button :: proc(b: Box, title: string, active: bool, index: int) {
 
 refresh_icon :: proc(b: Box) {
 	if focus == 0 {
-		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, GREEN)
+		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, GREEN, DEFAULT_CORNER_RADIUS + 2)
 		fill(b, BG)
 	}
 	color := MUTED if loading else RED if error_message != "" else GREEN
-	cx, cy := b.x + b.w / 2, b.y + b.h / 2
-	// Two opposing curved arrows, with arrowheads aligned to each arc's tangent.
-	radius: f64 = 8.5
-	for arrow in 0 ..< 2 {
-		start := (-165.0 + f64(arrow) * 180) * math.PI / 180
-		end := start + 150 * math.PI / 180
-		previous_x, previous_y := cx + radius * math.cos(start), cy + radius * math.sin(start)
-		dot(previous_x, previous_y, 1, color)
-		for i in 1 ..= 24 {
-			angle := start + f64(i) / 24 * (end - start)
-			x, y := cx + radius * math.cos(angle), cy + radius * math.sin(angle)
-			stroke(previous_x, previous_y, x, y, color, 2)
-			previous_x = x
-			previous_y = y
-		}
-		nx, ny := math.cos(end), math.sin(end)
-		tx, ty := -ny, nx
-		sides := [2]int{-1, 1}
-		for side in sides {
-			wing_x := previous_x - 5 * tx + f64(side) * 3.5 * nx
-			wing_y := previous_y - 5 * ty + f64(side) * 3.5 * ny
-			stroke(wing_x, wing_y, previous_x, previous_y, color, 2)
-			dot(wing_x, wing_y, 1, color)
-		}
-		dot(previous_x, previous_y, 1, color)
-	}
+	// One continuous Bezier path avoids seams between tiny line segments.
+	// Geometry is defined in a centered 24-by-24 icon space, entirely in Odin.
+	x, y := b.x + b.w / 2 - 12, b.y + b.h / 2 - 12
+	path_begin()
+	path_move(x + 20, y + 12)
+	path_curve(x + 20, y + 16.418, x + 16.418, y + 20, x + 12, y + 20)
+	path_curve(x + 7.582, y + 20, x + 4, y + 16.418, x + 4, y + 12)
+	path_curve(x + 4, y + 7.582, x + 7.582, y + 4, x + 12, y + 4)
+	path_curve(x + 15, y + 4, x + 17.6, y + 5.6, x + 19, y + 8)
+	path_move(x + 19, y + 3)
+	path_line(x + 19, y + 8)
+	path_line(x + 14, y + 8)
+	path_stroke(2, raw_data(color), i32(len(color)))
 }
