@@ -167,10 +167,24 @@ stream); there is no browser health/version polling.
 
 ## Web UI
 
-`frontend/main.odin` compiles to `build/frontend.wasm`. The UI fetches the native
+The `frontend/` Odin package compiles to `build/frontend.wasm`. The UI fetches the native
 price API and shows summary metrics, an interactive price/return chart, and an
 observation ledger. Returns are recalculated in WASM with `shared/finance`,
 matching the backend's calculation package. Data is explicitly synthetic.
+
+Start reading the frontend at `main.odin`, which contains startup and the frame
+loop. All frontend Odin files belong to the same package:
+
+| File | Responsibility |
+| --- | --- |
+| `main.odin` | Startup, frame lifecycle, and build configuration |
+| `state.odin` | Theme, dataset, request state, and interaction state |
+| `browser.odin` | Browser host function declarations |
+| `network.odin` | Price requests, JSON responses, SSE events, and timeouts |
+| `input.odin` | Pointer and keyboard actions |
+| `drawing.odin` | Canvas primitives, buttons, and refresh icon |
+| `view.odin` | Responsive layout, header, metrics, ledger, and footer |
+| `chart.odin` | Price/return chart and selected observation |
 
 Use the Price/Returns buttons to switch charts, move over the chart to inspect
 an observation, and use Refresh to reload data. With the canvas focused, left
