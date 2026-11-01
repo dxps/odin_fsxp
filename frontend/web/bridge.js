@@ -6,7 +6,17 @@
     const memory = new odin.WasmMemoryInterface();
     document.body.style.margin = "0";
     canvas.style.display = "block";
+    // Odin draws focus indicators for its controls, not the canvas surface.
+    canvas.style.outline = "none";
     const string = (ptr, len) => memory.loadString(ptr, len);
+    let events;
+    const forwardEvent = (kind, value = "") => {
+        const bytes = new TextEncoder().encode(value);
+        const exports = memory.exports;
+        if (bytes.length > exports.response_capacity()) return;
+        memory.loadBytes(exports.response_buffer(), bytes.length).set(bytes);
+        exports.event_received(kind, bytes.length);
+    };
     const host = {
         viewport_width: () => document.documentElement.clientWidth,
         viewport_height: () => document.documentElement.clientHeight,
@@ -37,6 +47,13 @@
         label: (ptr, len) => canvas.setAttribute("aria-label", string(ptr, len)),
         reload: () => window.location.reload(),
         set_pointer_cursor: active => { canvas.style.cursor = active ? "pointer" : "default"; },
+        connect_events: (ptr, len) => {
+            events?.close();
+            events = new EventSource(string(ptr, len));
+            events.addEventListener("backend-ready", event => forwardEvent(1, event.data));
+            events.addEventListener("frontend-changed", event => forwardEvent(2, event.data));
+            events.onerror = () => forwardEvent(0);
+        },
         fetch_text: (kind, ptr, len) => {
             const url = string(ptr, len);
             (async () => {
@@ -55,6 +72,7 @@
     };
     try {
         await odin.runWasm("/frontend.wasm", null, {browser: host}, memory);
+        window.addEventListener("pagehide", () => events?.close());
         const pointer = event => {
             const bounds = canvas.getBoundingClientRect();
             return [event.clientX - bounds.left, event.clientY - bounds.top];

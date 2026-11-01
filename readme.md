@@ -97,8 +97,9 @@ restart it once to load the updated development tooling.
 
 The development runner polls source contents every 300 ms. Backend edits
 trigger a build and process restart; frontend Odin, JavaScript bridge, or HTML
-host edits rebuild the WASM UI and browser assets. The browser checks the
-frontend version every 1.5 seconds and refreshes after a successful build.
+host edits rebuild the WASM UI and browser assets. One server-sent events (SSE)
+connection notifies the browser after a successful build; Odin then refreshes
+the page. The frontend does not poll health or version endpoints.
 Shared-package edits rebuild both targets. A failed compilation retains the
 last working backend or WASM artifact. Ctrl-C stops the runner and its backend.
 Edits to the runner itself require restarting it.
@@ -136,7 +137,10 @@ To run the compiled backend directly, optionally selecting a different address:
 - `GET /api/prices`: six deterministic **synthetic** closing prices and their
   simple daily returns. The first observation has `has_return: false` because
   no preceding price exists.
-- `GET /api/dev/version`: successful frontend build identifier for live reload.
+- `GET /api/dev/events`: persistent SSE connection for backend availability and
+  frontend rebuild notifications. `/api/health` remains available for diagnostics.
+- `GET /api/dev/version`: diagnostic/compatibility endpoint, allowing previously
+  loaded polling clients to discover the SSE build. The new UI does not poll it.
 
 Backend build identifiers use `yy.mm.dd.counter`, for example `26.11.01.1`.
 The date is UTC; the counter starts at 1 each day and increments after a
@@ -148,8 +152,18 @@ the development runner use the identifier `manual`.
 Open [health](http://127.0.0.1:8080/api/health) or
 [prices](http://127.0.0.1:8080/api/prices) while the backend is running.
 The server also serves the explicitly listed browser assets with their proper
-MIME types, including `application/wasm`. It is a bounded, sequential HTTP/1.x
-GET implementation for local development, not a production HTTP server.
+MIME types, including `application/wasm`. It uses bounded concurrent HTTP/1.x
+workers: up to 32 connections, of which at most 16 may be SSE streams, leaving
+capacity for API and asset requests. It remains a local-development server.
+
+The SSE stream sends `backend-ready` on every connection, `frontend-changed`
+with the current frontend version initially and whenever that version changes,
+and heartbeat comments every 10 seconds. The browser's `EventSource` handles
+reconnection with a one-second retry delay. Its minimal JavaScript adapter
+forwards events to Odin; Odin decides whether to refetch data or reload.
+Closed streams release their slots, and slow/broken writes terminate a stream.
+Only local build-marker sampling remains on the server (every 300 ms per
+stream); there is no browser health/version polling.
 
 ## Web UI
 
@@ -169,6 +183,6 @@ it does not yet expose every chart point and table cell as semantic controls.
 
 Backend reload currently means rebuild/restart, with in-memory state reset.
 Frontend live reload refreshes the page and resets UI state. Backend restarts
-are detected through health polling; the UI then refetches prices. Neither side
+are detected when SSE reconnects; the UI then refetches prices. Neither side
 currently implements state-preserving code replacement. Browser host assets
 are copied from local source/toolchain files; no CDN is needed.

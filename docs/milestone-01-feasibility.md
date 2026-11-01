@@ -9,7 +9,7 @@ user approved minimal runtime glue while keeping all application code in Odin.
 The delivered browser assets are:
 
 - `frontend.wasm`: Odin application state, input actions, layout, charts, JSON
-  parsing, financial calculations, health polling, and reload decisions.
+  parsing, financial calculations, SSE event handling, and reload decisions.
 - `odin.js`: official runtime copied from the installed compiler's
   `core/sys/wasm/js/odin.js` during each frontend build.
 - `bridge.js`: browser host adapter for canvas primitives, HTTP fetch, input,
@@ -33,8 +33,8 @@ specific compiler version. See the root readme for installation commands.
 
 - `shared/finance`: synthetic price fixture, API contract, and validated simple
   returns. Both native and WASM targets import this package.
-- `backend`: HTTP health and price endpoints, frontend version endpoint, and
-  explicitly listed static assets. Loopback address by default.
+- `backend`: HTTP health and price endpoints, SSE stream, and explicitly listed
+  static assets. Bounded concurrent workers; loopback address by default.
 - `frontend`: responsive Canvas 2D dashboard with price/return charts, metrics,
   observation inspection, ledger, refresh/retry, and backend connection status.
 - `tools/dev`: Odin builds/tests and source-content polling, with independent
@@ -43,8 +43,10 @@ specific compiler version. See the root readme for installation commands.
 The backend serves both API and browser assets from one origin; a separate
 frontend HTTP server is unnecessary. The frontend watcher runs independently
 when desired. A successful frontend build publishes a new version marker;
-Odin browser code polls it every 1.5 seconds and refreshes on change. Odin health
-polling detects backend restarts and refetches prices.
+the backend samples the local marker and pushes changes over one SSE
+connection. Odin handles these events and refreshes on version changes.
+EventSource reconnects after backend restarts or connection interruptions;
+Odin then refetches prices. Browsers do not poll health or version endpoints.
 
 Backend reload is rebuild/restart. Frontend reload is a page refresh. Neither
 preserves in-memory state across replacement. Failed compilations retain the
@@ -66,10 +68,14 @@ it once.
   WASM artifact/version and running UI; fixing it triggers a successful reload.
 - Prior native reload checks verified continued serving after a failed backend
   compilation and recovery after the error was fixed.
+- SSE checks verify initial events, version change notifications, heartbeats,
+  concurrent API/asset requests, stream limits, and slot reuse after disconnect.
+- Browser SSE checks cover no health/version polling, rebuild notifications,
+  backend restart/reconnection, and recovery after a temporary server outage.
 
 ## Current limits
 
 Data is synthetic. Historical data ingestion, strategy backtesting, and
-persistence are later increments. The HTTP server is a sequential, bounded
+persistence are later increments. The HTTP server is a bounded, concurrent
 local-development server. The canvas supplies keyboard controls and a summary,
 with full semantic accessibility still to be developed.
