@@ -23,7 +23,7 @@ calculate_layout :: proc(width, viewport_height: f64) -> Layout {
 render :: proc(width, viewport_height: f64) {
 	layout := calculate_layout(width, viewport_height)
 	begin(layout.width, layout.height)
-	fill({0, 0, layout.width, layout.height}, BG, corner_radius = 0)
+	fill({0, 0, layout.width, layout.height}, THEME.colors.background, corner_radius = 0)
 	render_header(layout)
 	render_metrics(layout)
 	render_chart(layout)
@@ -33,14 +33,14 @@ render :: proc(width, viewport_height: f64) {
 
 render_header :: proc(layout: Layout) {
 	w, margin, narrow := layout.width, layout.margin, layout.narrow
-	write(margin, 40, 13, "ODIN  /  RESEARCH", GREEN)
+	write(margin, 40, 13, "ODIN  /  RESEARCH", THEME.colors.positive)
 	write(margin, 96, 34 if narrow else 42, "Market data lab")
-	write(margin, 127, 14, "Read. Build. Inspect. Repeat.", MUTED)
+	write(margin, 127, 14, "Read. Build. Inspect. Repeat.", THEME.colors.muted)
 	refresh_box = {w - margin - 40, 154, 40, 40}
 	refresh_icon(refresh_box)
-	write(margin, 180, 12, "DEMO / SYNTHETIC", GREEN)
+	write(margin, 180, 12, "DEMO / SYNTHETIC", THEME.colors.positive)
 	if error_message != "" {
-		write(margin, 207, 11, error_message, RED)
+		write(margin, 207, 11, error_message, THEME.colors.negative)
 	}
 }
 
@@ -63,14 +63,14 @@ render_metrics :: proc(layout: Layout) {
 		if narrow {
 			box = {margin, cards_y + f64(i) * 94, content, 82}
 		}
-		fill(box, PANEL)
-		write(box.x + 18, box.y + 26, 11, titles[i], MUTED)
+		fill(box, THEME.colors.panel)
+		write(box.x + 18, box.y + 26, 11, titles[i], THEME.colors.muted)
 		write(
 			box.x + 18,
 			box.y + box.h - 23,
 			29,
 			values[i] if count > 0 else "--",
-			GREEN if i == 0 else INK,
+			THEME.colors.positive if i == 0 else THEME.colors.text,
 		)
 	}
 }
@@ -78,18 +78,18 @@ render_metrics :: proc(layout: Layout) {
 render_ledger :: proc(layout: Layout) {
 	margin, content, table_y := layout.margin, layout.content, layout.table_y
 	write(margin, table_y, 18, "Observation ledger")
-	write(margin, table_y + 25, 11, "Click a row, hover the chart, or use arrow keys.", MUTED)
-	fill({margin, table_y + 43, content, 32}, GRID, top_corners_only = true)
-	write(margin + 14, table_y + 64, 11, "DATE", MUTED)
-	write(margin + content * 0.48, table_y + 64, 11, "CLOSE", MUTED)
-	write(margin + content * 0.72, table_y + 64, 11, "RETURN", MUTED)
+	write(margin, table_y + 25, 11, "Click a row, hover the chart, or use arrow keys.", THEME.colors.muted)
+	fill({margin, table_y + 43, content, 32}, THEME.colors.grid, top_corners_only = true)
+	write(margin + 14, table_y + 64, 11, "DATE", THEME.colors.muted)
+	write(margin + content * 0.48, table_y + 64, 11, "CLOSE", THEME.colors.muted)
+	write(margin + content * 0.72, table_y + 64, 11, "RETURN", THEME.colors.muted)
 	for item, i in prices[:count] {
 		row_y := table_y + 76 + f64(i) * 39
 		row_boxes[i] = {margin, row_y, content, 38}
 		if i == selected {
-			fill(row_boxes[i], PANEL)
+			fill(row_boxes[i], THEME.colors.panel)
 		} else if i == hovered_row {
-			fill(row_boxes[i], ROW_HOVER)
+			fill(row_boxes[i], THEME.colors.row_hover)
 		}
 		write(margin + 14, row_y + 24, 12, item.date)
 		write(margin + content * 0.48, row_y + 24, 12, fmt.tprintf("%.2f", item.close))
@@ -98,7 +98,7 @@ render_ledger :: proc(layout: Layout) {
 			row_y + 24,
 			12,
 			fmt.tprintf("%+.2f%%", item.daily_return * 100) if item.has_return else "--",
-			GREEN if item.daily_return >= 0 else RED,
+			THEME.colors.positive if item.daily_return >= 0 else THEME.colors.negative,
 		)
 	}
 }
@@ -106,7 +106,7 @@ render_ledger :: proc(layout: Layout) {
 render_footer :: proc(layout: Layout) {
 	margin, table_y := layout.margin, layout.table_y
 	footer_y := table_y + 100 + f64(count) * 39
-	dot(margin + 4, footer_y - 4, 3, GREEN if online else RED)
+	dot(margin + 4, footer_y - 4, 3, THEME.colors.positive if online else THEME.colors.negative)
 	write(
 		margin + 16,
 		footer_y,
@@ -116,6 +116,6 @@ render_footer :: proc(layout: Layout) {
 			"online" if online else "offline",
 			string(backend_build[:backend_build_length]),
 		),
-		MUTED,
+		THEME.colors.muted,
 	)
 }

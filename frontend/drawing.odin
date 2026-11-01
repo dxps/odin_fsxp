@@ -2,16 +2,16 @@ package main
 
 // Canvas primitives and reusable controls. Coordinates are in CSS pixels.
 // Radius is configurable per rectangle; 0 draws square corners.
-fill :: proc(box: Box, color: string, corner_radius: f64 = DEFAULT_CORNER_RADIUS, top_corners_only := false) {
+fill :: proc(box: Box, color: string, corner_radius: f64 = THEME.corner_radius, top_corners_only := false) {
 	radius := clamp(corner_radius, 0, max(0.0, min(box.w, box.h) / 2))
 	rect(box.x, box.y, box.w, box.h, radius, 1 if top_corners_only else 0, raw_data(color), i32(len(color)))
 }
 
-write :: proc(x, y, size: f64, value: string, color := INK) {
+write :: proc(x, y, size: f64, value: string, color := THEME.colors.text) {
 	text(x, y, size, raw_data(value), i32(len(value)), raw_data(color), i32(len(color)))
 }
 
-stroke :: proc(x1, y1, x2, y2: f64, color := GRID, width: f64 = 1) {
+stroke :: proc(x1, y1, x2, y2: f64, color := THEME.colors.grid, width: f64 = 1) {
 	line(x1, y1, x2, y2, width, raw_data(color), i32(len(color)))
 }
 
@@ -25,18 +25,18 @@ inside :: proc(box: Box, x, y: f64) -> bool {
 
 button :: proc(b: Box, title: string, active: bool, index: int) {
 	if focus == index {
-		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, GREEN, DEFAULT_CORNER_RADIUS + 2)
+		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, THEME.colors.positive, THEME.corner_radius + 2)
 	}
-	fill(b, GRID if active else PANEL)
-	write(b.x + 14, b.y + 25, 13, title, GREEN if active else INK)
+	fill(b, THEME.colors.grid if active else THEME.colors.panel)
+	write(b.x + 14, b.y + 25, 13, title, THEME.colors.positive if active else THEME.colors.text)
 }
 
 refresh_icon :: proc(b: Box) {
 	if focus == 0 {
-		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, GREEN, DEFAULT_CORNER_RADIUS + 2)
-		fill(b, BG)
+		fill({b.x - 2, b.y - 2, b.w + 4, b.h + 4}, THEME.colors.positive, THEME.corner_radius + 2)
+		fill(b, THEME.colors.background)
 	}
-	color := MUTED if loading else RED if error_message != "" else GREEN
+	color := THEME.colors.muted if loading else THEME.colors.negative if error_message != "" else THEME.colors.positive
 	// One continuous Bezier path avoids seams between tiny line segments.
 	// Geometry is defined in a centered 24-by-24 icon space, entirely in Odin.
 	x, y := b.x + b.w / 2 - 12, b.y + b.h / 2 - 12
