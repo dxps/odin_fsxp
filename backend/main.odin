@@ -5,6 +5,8 @@ import "core:fmt"
 import "core:net"
 import "core:os"
 import "core:strings"
+import "core:strconv"
+import ts "../shared/timeseries"
 import "core:sync"
 import "core:thread"
 import "core:time"
@@ -104,7 +106,8 @@ handle :: proc(client: net.TCP_Socket) {
         respond(client, "405 Method Not Allowed", "{\"error\":\"GET required\"}")
         return
     }
-    path := fields[1]
+    target := fields[1]
+    path := target
     if query := strings.index(path, "?"); query >= 0 { path = path[:query] }
     switch path {
     case "/", "/index.html": serve_asset(client, "build/web/index.html", "text/html; charset=utf-8")
@@ -122,6 +125,15 @@ handle :: proc(client: net.TCP_Socket) {
         if marshal_err == nil { respond(client, "200 OK", string(data)) }
     case "/api/health":
         data, err := json.marshal(struct {status, build: string}{"ok", BUILD_ID}, allocator=context.temp_allocator)
+        if err == nil { respond(client, "200 OK", string(data)) }
+    case "/api/research":
+        options, valid := parse_research_options(target)
+        if !valid { respond(client, "400 Bad Request", "{\"error\":\"invalid research parameters\"}"); return }
+        previous_allocator := context.allocator
+        context.allocator = context.temp_allocator
+        result := finance.build_research(options)
+        context.allocator = previous_allocator
+        data, err := json.marshal(result, allocator=context.temp_allocator)
         if err == nil { respond(client, "200 OK", string(data)) }
     case "/api/prices":
         observations: [len(finance.FIXTURE)]Observation
@@ -220,4 +232,35 @@ send_all :: proc(client: net.TCP_Socket, bytes: []u8) -> bool {
         sent += n
     }
     return true
+}
+
+// Strict bounded query contract. Unknown/duplicate keys fail rather than guessing.
+parse_research_options :: proc(target: string) -> (finance.Research_Options, bool) {
+    options := finance.Research_Options{start=20260101, end=20260630, window=10}
+    query := strings.index(target, "?")
+    if query < 0 { return options, true }
+    seen: map[string]bool = make(map[string]bool, context.temp_allocator)
+    for pair in strings.split(target[query+1:], "&", context.temp_allocator) {
+        parts := strings.split(pair, "=", context.temp_allocator)
+        if len(parts) != 2 || seen[parts[0]] { return options, false }
+        seen[parts[0]] = true
+        key, value := parts[0], parts[1]
+        switch key {
+        case "instrument":
+            if value == "A" { options.instrument = 0 } else if value == "B" { options.instrument = 1 } else { return options, false }
+        case "frequency":
+            switch value { case "daily": options.frequency = .Daily; case "weekly": options.frequency = .Weekly; case "monthly": options.frequency = .Monthly; case: return options, false }
+        case "join":
+            switch value { case "inner": options.join = .Inner; case "left": options.join = .Left; case "outer": options.join = .Outer; case: return options, false }
+        case "start", "end":
+            date, valid := ts.parse_date(value)
+            if !valid { return options, false }
+            if key == "start" { options.start = date } else { options.end = date }
+        case "window":
+            n, valid := strconv.parse_int(value)
+            if !valid || n < 2 || n > 60 { return options, false }; options.window = n
+        case: return options, false
+        }
+    }
+    return options, options.start <= options.end && options.start >= 20260101 && options.end <= 20260630
 }

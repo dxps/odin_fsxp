@@ -8,6 +8,10 @@ an Odin development runner, and a canvas UI rendered by Odin/WASM. See
 [Milestone 01](docs/milestone-01-feasibility.md) for findings and the proposed
 development workflow.
 
+[Milestone 02](doc/milestone-02-quantitative-workflow.md) adds a six-month
+synthetic quantitative workflow lab: explicit calendar alignment, rolling
+statistics, resampling, lagging, excess returns, and compounded wealth.
+
 <br/>
 
 ## Prerequisites
@@ -136,6 +140,9 @@ To run the compiled backend directly, optionally selecting a different address:
 ## Current API
 
 - `GET /api/health`: status and build identifier.
+- `GET /api/research`: configurable synthetic research data, derived series,
+  and alignment diagnostics. See [Milestone 02](doc/milestone-02-quantitative-workflow.md)
+  for query parameters and calculation conventions.
 - `GET /api/prices`: six deterministic **synthetic** closing prices and their
   simple daily returns.\
   The first observation has `has_return: false` because
@@ -173,33 +180,25 @@ stream); there is no browser health/version polling.
 
 ## Web UI
 
-The `frontend/` Odin package compiles to `build/frontend.wasm`. The UI fetches the native
-price API and shows summary metrics, an interactive price/return chart, and an
-observation ledger. Returns are recalculated in WASM with `shared/finance`,
-matching the backend's calculation package. Data is explicitly synthetic.
+The `frontend/` Odin package compiles to `build/frontend.wasm`. It displays the
+research API's two synthetic instruments with frequency, date-range, join-policy,
+and rolling-window controls. Cycle the chart control through prices with a moving
+average, period returns, rolling sample volatility, wealth, and calendar comparison.
+The paginated ledger displays missing values as `--` and partial periods with `*`.
+All application logic and canvas rendering remain in Odin.
 
-Start reading the frontend at `main.odin`, which contains startup and the frame
-loop. All frontend Odin files belong to the same package:
+Start reading at `frontend/main.odin` for startup and the frame loop. State,
+networking, input, drawing, layout, and charts live in the corresponding
+`state`, `network`, `input`, `drawing`, `view`, and `chart` Odin files.
+Shared time-series primitives live in `shared/timeseries`; finance calculations
+and the research pipeline live in `shared/finance`.
 
-| File | Responsibility |
-| --- | --- |
-| `main.odin` | Startup, frame lifecycle, and build configuration |
-| `state.odin` | Theme, dataset, request state, and interaction state |
-| `browser.odin` | Browser host function declarations |
-| `network.odin` | Price requests, JSON responses, SSE events, and timeouts |
-| `input.odin` | Pointer and keyboard actions |
-| `drawing.odin` | Canvas primitives, buttons, and refresh icon |
-| `view.odin` | Responsive layout, header, metrics, ledger, and footer |
-| `chart.odin` | Price/return chart and selected observation |
-
-Use the Price/Returns buttons to switch charts, move over the chart to inspect
-an observation, and use Refresh to reload data. With the canvas focused, left
-and right arrow keys change the inspected observation; Tab cycles through
-controls and Enter activates them. Errors preserve the last usable dataset and
-offer Retry. The UI adapts to desktop and phone widths (360 px and above).
-
-This canvas milestone supplies keyboard actions and a screen-reader summary;
-it does not yet expose every chart point and table cell as semantic controls.
+Hover the chart or click a ledger row to inspect observations. Arrow keys move
+selection and its ledger page. Tab selects controls and Enter/Space activates
+them. Refresh retries requests; failures preserve the previous dataset.
+The UI adapts to desktop and phone widths (360 px and above). The canvas has
+keyboard navigation and a screen-reader summary; full semantic accessibility
+remains future work.
 
 Backend reload currently means rebuild/restart, with in-memory state reset.
 Frontend live reload refreshes the page and resets UI state. Backend restarts
