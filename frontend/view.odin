@@ -36,10 +36,10 @@ render_header :: proc(layout: Layout) {
     charts := [5]string{"Chart: price", "Chart: return", "Chart: volatility", "Chart: wealth", "Chart: compare"}
     labels := [9]string{
         "Refresh", "Asset: A" if instrument == 0 else "Asset: B",
-        frequencies[frequency],
-        ranges[range_choice],
+        fmt.tprintf("Frequency: %s", frequencies[frequency]),
+        fmt.tprintf("Range: %s", ranges[range_choice]),
         joins[join_policy],
-        fmt.tprintf("Window: %d",windows[window_choice]),
+        fmt.tprintf("Window: %d observations",windows[window_choice]),
         charts[chart_mode],
         "Previous page", "Next page",
     }

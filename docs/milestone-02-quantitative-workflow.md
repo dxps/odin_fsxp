@@ -1,21 +1,16 @@
 # Milestone 02: Quantitative workflow lab
 
-Implemented: 2026-11-02.
+This milestone implements an Odin quantitative workflow.
 
-This milestone adapts chapter 2, *Setting up a Python Quantitative Workflow*,
-from *Hands-On Financial Trading with Python* to the existing Odin native
-backend and Odin/WASM canvas frontend. It implements the chapter's data,
-numerical operations, reusable functions, and verification practices in Odin.
-Python, pandas, NumPy, notebooks, and an AI API are not runtime dependencies.
+<br/>
 
 ## Try it
 
-Keep `./run_dev.sh` running and open <http://127.0.0.1:8080/>. Source changes
-rebuild the backend and frontend using the existing watcher and SSE reload.
+Keep `./run_dev.sh` running and open <http://127.0.0.1:8080/>.
 
 Click a control repeatedly to cycle its choices:
 
-- Asset: DEMO-A or DEMO-B; the other instrument is the benchmark.
+- Asset: A or B; the other instrument is the benchmark.
 - Frequency: daily, weekly, monthly.
 - Range: January–June, January–March, April–June 2026.
 - Join: inner, left, outer.
@@ -37,6 +32,8 @@ periods. Volatility is per period, with no annualization in the UI.
 
 Monthly data contains only six observations: select window 3 to see a rolling
 average/volatility. A ten-period window correctly produces no monthly estimates.
+
+<br/>
 
 ## Data and calculation flow
 
@@ -116,6 +113,8 @@ broadcasting engine is introduced; the supported matrix operation validates its
 shape. Computation uses compiled loops and contiguous arrays; SIMD and parallel
 execution should follow measured need.
 
+<br/>
+
 ## API
 
 `GET /api/research` accepts these optional parameters:
@@ -150,6 +149,8 @@ ASCII tokens; URL-encoded equivalents are not decoded.
 `/api/prices` retains the original six-observation fixture contract. Health,
 static assets, and development SSE endpoints remain available.
 
+<br/>
+
 ## Frontend bounds and behavior
 
 The research frontend owns at most 256 rows and a 256 KiB response buffer,
@@ -162,6 +163,8 @@ renders the returned calculations. Canvas controls and interaction remain Odin;
 JavaScript continues to supply only browser host infrastructure.
 The screen-reader summary reports dataset and join counts, but the canvas still
 does not expose every control and table cell as separate semantic elements.
+
+<br/>
 
 ## Verification and development discipline
 
@@ -188,6 +191,8 @@ shape, date conventions, missing-value policy, units, and known expected results
 before implementation. Verify the resulting calculations and record assumptions
 here. The chapter's example prompts are source material, not project permissions
 or instructions. Small reviewed commits provide rollback points.
+
+<br/>
 
 ## Scope remaining after this milestone
 
