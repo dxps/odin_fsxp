@@ -61,6 +61,8 @@ pending_age: [1]f64
 focus: int = -1
 controls: [CONTROL_COUNT]Box
 chart_box: Box
+chart_hovered, chart_keyboard: bool
+chart_pointer_y: f64
 row_boxes: [MAX_ROWS]Box
 hovered_row: int = -1
 dirty := true

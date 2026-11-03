@@ -27,7 +27,10 @@ pointer :: proc "c" (x,y: f64, down: i32) {
     for box, i in controls { if inside(box,x,y) { over = true; if down != 0 { focus = -1; activate_control(i) } } }
     set_pointer_cursor(1 if over else 0)
     if down != 0 && hovered_row >= 0 { selected = hovered_row; focus = -1 }
-    if count > 1 && inside(chart_box,x,y) {
+    chart_hovered = count > 0 && chart_box.w > 0 && inside(chart_box,x,y)
+    chart_keyboard = false
+    chart_pointer_y = y
+    if chart_hovered {
         selected = clamp(int(math.round((x-chart_box.x)/chart_box.w*f64(count-1))),0,count-1)
     }
     dirty = true
@@ -36,9 +39,10 @@ pointer :: proc "c" (x,y: f64, down: i32) {
 key :: proc "c" (code, shift: i32) -> i32 {
     context = runtime.default_context()
     switch code {
-    case 1: selected = max(0,selected-1); ledger_page = selected/PAGE_SIZE
-    case 2: selected = min(max(0,count-1),selected+1); ledger_page = selected/PAGE_SIZE
+    case 1: chart_keyboard = true; selected = max(0,selected-1); ledger_page = selected/PAGE_SIZE
+    case 2: chart_keyboard = true; selected = min(max(0,count-1),selected+1); ledger_page = selected/PAGE_SIZE
     case 3:
+        chart_keyboard = false
         if shift != 0 { if focus <= 0 { focus = -1; dirty = true; return 0 }; focus -= 1 } else {
             if focus == CONTROL_COUNT-1 { focus = -1; dirty = true; return 0 }; focus += 1
         }
